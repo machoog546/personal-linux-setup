@@ -1,0 +1,82 @@
+---
+- hosts: localhost
+  vars_prompt:
+    - name: username
+      prompt: "What is your full name? "
+      private: false
+    
+    - name: email
+      prompt: "What is your email? "
+      private: false
+
+  tasks:
+    #gather facts, parse system info with *whatever you set system info to.ansible_user_id, then print it out
+    #once it's done, use that username variable to set the /home/folder path (or use the environment variable that facts can pull
+    - name: Gathering facts about this device...
+      set_fact:
+        username: 
+
+    - name: Creating Downloads folder...
+      file:
+        path: "{{ ansible_user_dir }}/Downloads"
+        state: directory
+        mode: '0745'
+        owner: "{{ ansible_user_id }}"
+
+    - name: Installing Open SSH Server...
+      become: true
+      apt:
+        name: openssh-server
+        state: present
+
+    - name: Installing NeoVim...
+      become: true
+      apt:
+        name: neovim
+        state: present
+    
+    - name: Installing tmux...
+      become: true
+      apt:
+        name: tmux
+        state: present
+
+    - name: Installing htop...
+      become: true
+      apt:
+        name: htop
+        state: present
+
+    - name: Download VS Code from web...
+      get_url:
+        #need to replace '=' with '%20' otherwise an error will happen saying it can't read json/yaml in that line
+        owner: "{{ ansible_user_id }}"
+        url: "https://code.visualstudio.com/sha/download?build=stable&os=linux-deb-x64"
+        dest: "{{ ansible_user_dir }}/Downloads/vs_code.deb"
+        mode: '557'
+    
+    - name: Installing VS Code...
+      become: true
+      apt:
+        deb: "{{ ansible_user_dir }}/Downloads/vs_code.deb"
+    - name: Checking if SSH keypair exists...
+      stat:
+        path: "{{ ansible_user_dir }}/.ssh/id_rsa"
+      register: key_info
+
+    - name: 'Generating SSH Keys...'
+      community.crypto.openssh_keypair:
+        path: "{{ ansible_user_dir }}/.ssh/id_rsa"
+        force: true
+        state: present
+
+    - name: Creating GitHub folder...
+      file:
+        path: "{{ ansible_user_dir }}/GitHub"
+        state: directory
+        owner: "{{ ansible_user_id }}"
+        mode: "0745"
+    
+    - name: Configuration user GitHub information...
+      shell: "git config --global user.name '{{ name }}'"
+      shell: "git config --global user.email '{{ email}}'"
