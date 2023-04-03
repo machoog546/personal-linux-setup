@@ -8,4 +8,4 @@ apt install ansible -y
 
 echo "Installing software with ansible...."
 echo ""
-ansible-playbook initial-setup.yml --ask-become-pass
+ansible-playbook linux-setup-playbook.yml --ask-become-pass
